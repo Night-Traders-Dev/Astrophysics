@@ -1,5 +1,5 @@
 
-```markdown
+
 # Galaxy Simulation Scripts
 
 This repository contains two Python scripts for simulating galaxy dynamics using the `curses` library for real-time visualization in the terminal. The first script simulates galaxy rotation velocities using Newtonian and MOND gravity theories. The second script simulates galaxy formation and mass density evolution against cosmic inflation, incorporating various astrophysical processes.
