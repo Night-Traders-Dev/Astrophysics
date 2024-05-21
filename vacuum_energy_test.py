@@ -6,45 +6,28 @@ from collections import defaultdict
 
 # Constants for particle types
 PARTICLES = [
-    "Electron", "Positron", "Electron Neutrino", "Muon", "Anti-Muon", "Muon Neutrino",
-    "Tau", "Anti-Tau", "Tau Neutrino", "Up Quark", "Down Quark", "Charm Quark",
-    "Strange Quark", "Top Quark", "Bottom Quark", "Photon", "Gluon", "W Boson",
-    "Z Boson", "Higgs Boson", "Proton", "Neutron", "Pion", "Kaon"
+    "Electron", "Positron", "Quark", "Anti-Quark",
+    "Photon", "Neutrino", "Anti-Neutrino", "Muon", "Anti-Muon"
 ]
 
 # Particle masses (in GeV/c^2)
 PARTICLE_MASSES = {
     "Electron": 0.000511,
     "Positron": 0.000511,
-    "Electron Neutrino": 1e-9,
-    "Muon": 0.105,
-    "Anti-Muon": 0.105,
-    "Muon Neutrino": 1e-9,
-    "Tau": 1.777,
-    "Anti-Tau": 1.777,
-    "Tau Neutrino": 1e-9,
-    "Up Quark": 0.0022,
-    "Down Quark": 0.0047,
-    "Charm Quark": 1.28,
-    "Strange Quark": 0.096,
-    "Top Quark": 172.76,
-    "Bottom Quark": 4.18,
+    "Quark": 0.005,  # Simplified average mass for light quarks
+    "Anti-Quark": 0.005,
     "Photon": 0.0,
-    "Gluon": 0.0,
-    "W Boson": 80.379,
-    "Z Boson": 91.1876,
-    "Higgs Boson": 125.1,
-    "Proton": 0.938,
-    "Neutron": 0.939,
-    "Pion": 0.135,
-    "Kaon": 0.494
+    "Neutrino": 1e-9,  # Very small mass for neutrinos
+    "Anti-Neutrino": 1e-9,
+    "Muon": 0.105,
+    "Anti-Muon": 0.105
 }
 
 # Define the volume of space (in cubic meters)
-VOLUME = 1  # 1 cubic meter
-
+VOLUME = 10
 # Initialize particle counts
 particle_counts = defaultdict(int)
+particles_list = []
 total_particle_counts = defaultdict(int)
 total_energy = 0.0
 total_momentum = defaultdict(float)
@@ -70,32 +53,114 @@ def zero_point_energy(mass):
     omega = c * np.sqrt(mass)
     return 0.5 * hbar * omega
 
+# Calculate boundary effects (e.g., confinement effects)
+def calculate_boundary_effects(radius, boundary_constant):
+    """
+    Calculate the potential energy due to boundary effects.
+
+    Parameters:
+        radius (float): Distance from the boundary.
+        boundary_constant (float): Constant representing the strength of the boundary potential.
+
+    Returns:
+        float: Potential energy due to boundary effects.
+    """
+    return boundary_constant / (radius ** 2)
+
+# Calculate gravitational effects (e.g., gravitational redshift)
+def calculate_gravitational_effects(mass, radius, gravitational_constant):
+    """
+    Calculate the change in energy due to gravitational effects (e.g., gravitational redshift).
+
+    Parameters:
+        mass (float): Mass causing the gravitational field.
+        radius (float): Distance from the center of mass.
+        gravitational_constant (float): Gravitational constant.
+
+    Returns:
+        float: Change in energy due to gravitational effects.
+    """
+    return gravitational_constant * mass / radius
+
+def calculate_radius(particle_position, box_size):
+    """
+    Calculate the distance from the particle to the nearest wall of the cubic meter box.
+
+    Parameters:
+        particle_position (tuple): Tuple containing the (x, y, z) coordinates of the particle.
+        box_size (float): Size of the cubic meter box.
+
+    Returns:
+        float: Distance from the particle to the nearest wall of the cubic meter box.
+    """
+    x_distance = min(particle_position[0], box_size - particle_position[0])
+    y_distance = min(particle_position[1], box_size - particle_position[1])
+    z_distance = min(particle_position[2], box_size - particle_position[2])
+    return min(x_distance, y_distance, z_distance)
+
+def add_particle(particle_type, position):
+    """
+    Add a particle to the list with its initial position.
+
+    Parameters:
+        particle_type (str): Type of particle.
+        position (tuple): Initial position of the particle (x, y, z).
+    """
+    particles_list.append({"type": particle_type, "position": position})
+
+def remove_particle(particle_index):
+    """
+    Remove a particle from the list.
+
+    Parameters:
+        particle_index (int): Index of the particle in the list.
+    """
+    if 0 <= particle_index < len(particles_list):
+        del particles_list[particle_index]
+    else:
+        print("Invalid particle index.")
+
+def update_particle_location(particle_index, new_position):
+    """
+    Update the location of a particle in the list.
+
+    Parameters:
+        particle_index (int): Index of the particle in the list.
+        new_position (tuple): New position of the particle (x, y, z).
+    """
+    if 0 <= particle_index < len(particles_list):
+        particles_list[particle_index]["position"] = new_position
+    else:
+        print("Invalid particle index.")
+
+
+
 def simulate_vacuum_energy():
     """
-    Simulates the vacuum energy field and the potential for virtual particle pair creation.
+    Simulate particle creation and annihilation events.
     """
+    global particles_list
     global total_energy, total_momentum, total_lifetime, total_energy_spectrum
     global total_temperature, total_density_fluctuations, total_cross_sections
     global total_boundary_effects, total_gravitational_effects, total_experiment_comparison
     global total_interactions, time_steps
 
-    # Randomly decide whether a particle pair is created or annihilated
     action = random.choice(["create", "annihilate"])
-    particle_type = random.choice(PARTICLES[:-4])  # Exclude hadrons and gauge bosons from creation/annihilation
+    particle_type = random.choice(PARTICLES[:-1])  # Exclude photons from creation/annihilation
 
     if action == "create":
-        particle_counts[particle_type] += 1
-        total_particle_counts[particle_type] += 1
-    elif action == "annihilate" and particle_counts[particle_type] > 0:
-        particle_counts[particle_type] -= 1
-        if particle_type in ["Electron", "Positron", "Muon", "Anti-Muon", "Tau", "Anti-Tau", "Quark", "Anti-Quark"]:
-            particle_counts["Photon"] += 2  # Pair annihilation produces photons
-            total_particle_counts["Photon"] += 2
-        total_interactions += 1
+        add_particle(particle_type, (random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1)))
+    elif action == "annihilate":
+        for particle in particles_list:
+            if particle["type"] == particle_type:
+                remove_particle(particles_list.index(particle))
+                break  # Remove only one particle to match with annihilation
+        if particle_type in ["Electron", "Positron", "Quark", "Anti-Quark", "Muon", "Anti-Muon"]:
+            add_particle("Photon", (random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1)))
 
     # Calculate the vacuum energy
     current_energy = sum(zero_point_energy(PARTICLE_MASSES[pt]) * count for pt, count in particle_counts.items())
-    total_energy += current_energy
+    total_energy += current_energy * VOLUME
 
     # Calculate momentum distribution
     for pt, count in particle_counts.items():
@@ -110,8 +175,8 @@ def simulate_vacuum_energy():
         total_energy_spectrum[pt].append(zero_point_energy(PARTICLE_MASSES[pt]))
 
     # Calculate temperature (average energy per degree of freedom)
-    total_temperature += current_energy / len(particle_counts)  # Approximation
-
+    if len(particle_counts) > 0:
+        total_temperature += current_energy / len(particle_counts)  # Approximation
     # Calculate density fluctuations (standard deviation of particle counts)
     total_density_fluctuations += np.std(list(particle_counts.values()))
 
@@ -154,8 +219,8 @@ def display_vacuum_simulation(stdscr):
             zpe = zero_point_energy(PARTICLE_MASSES[particle]) * count
             stdscr.addstr(i, 0, f"{particle:<15} | {count:<10} | {total_count:<12} | {zpe:<25.6e}")
 
-        stdscr.addstr(i + 2, 0, f"Current Vacuum Energy (per cubic meter): {current_energy:.6e} GeV")
-        stdscr.addstr(i + 3, 0, f"Average Vacuum Energy (per cubic meter): {average_energy:.6e} GeV")
+        stdscr.addstr(i + 2, 0, f"Current Vacuum Energy (per {VOLUME:,.0f} cubic meter): {current_energy:.6e} GeV")
+        stdscr.addstr(i + 3, 0, f"Average Vacuum Energy (per {VOLUME:,.0f} cubic meter): {average_energy:.6e} GeV")
         stdscr.addstr(i + 4, 0, f"Total Interactions: {total_interactions}")
 
         # Refresh the screen
@@ -170,6 +235,7 @@ def display_vacuum_simulation(stdscr):
 def main(stdscr):
     # Initialize curses
     curses.curs_set(0)  # Hide the cursor
+#    add_particle("Neutrino", (random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1)))
     display_vacuum_simulation(stdscr)
 
 if __name__ == "__main__":
