@@ -6,7 +6,6 @@ import time
 H_0 = 70  # Hubble constant (km/s/Mpc)
 rho_crit_0 = 1e-29  # Critical density of the universe at present (kg/m^3)
 G = 6.67430e-11  # Gravitational constant (m^3 kg^-1 s^-2)
-cosmic_inflation_factor = 1e26  # Approximate factor by which the universe expanded during inflation
 overall_mass_limit = 1e12  # Overall mass limit for galaxy formation (kg)
 star_death_rate = 0.01  # Fraction of stellar mass that dies each time step
 black_hole_formation_rate = 0.001  # Fraction of stellar mass that turns into black holes each time step
@@ -16,21 +15,26 @@ supernova_feedback_rate = 0.001  # Fraction of gas ejected due to supernova feed
 dark_matter_halo_growth_rate = 0.03  # Growth rate of the dark matter halo
 
 # Simulated data for galaxy formation and mass density
-def simulate_galaxy_formation_and_density(time_step, inflation_factor, total_mass, stellar_mass, black_hole_mass, gas_mass, dark_matter_mass, star_formation_rate):
-    t = time_step / 1000  # Normalize time for each step
-    inflation = 1 + inflation_factor * t**2  # Simplified model for cosmic inflation
+def simulate_galaxy_formation_and_density(
+    time_step, total_mass, stellar_mass, black_hole_mass, gas_mass, dark_matter_mass, star_formation_rate
+):
+    t = time_step / 1000  # Normalize time for each step (e.g., billions of years)
+    inflation = 1 + 1e3 * t if t < 1 else 1  # Cosmic inflation ends after ~1 billion years
 
-    galaxy_formation_rate = np.exp(-5 * (t - 0.5)**2)  # Peak formation rate at the middle of the timeline
-    galaxy_formation_rate = min(galaxy_formation_rate, overall_mass_limit - total_mass)  # Cap by overall mass limit
-    mass_density = rho_crit_0 / inflation  # Simplified inverse relation to inflation
+    # Galaxy formation rate peaks at ~3 billion years, based on observed star formation rates
+    galaxy_formation_rate = np.exp(-0.1 * (t - 3) ** 2) * 1e11
+    galaxy_formation_rate = min(galaxy_formation_rate, overall_mass_limit - total_mass)
+
+    # Mass density decreases as the universe expands
+    mass_density = rho_crit_0 / inflation
 
     # Update masses
     total_mass += galaxy_formation_rate
     stellar_mass += star_formation_rate * gas_mass  # New stars form from gas
     gas_mass += gas_accretion_rate * gas_mass - gas_ejection_rate * gas_mass - supernova_feedback_rate * gas_mass
-    stellar_mass -= star_death_rate * stellar_mass  # Apply star death rate
-    black_hole_mass += black_hole_formation_rate * stellar_mass  # Apply black hole formation rate
-    dark_matter_mass += dark_matter_halo_growth_rate * dark_matter_mass  # Apply dark matter halo growth rate
+    stellar_mass -= star_death_rate * stellar_mass  # Star death rate
+    black_hole_mass += black_hole_formation_rate * stellar_mass  # Black hole formation rate
+    dark_matter_mass += dark_matter_halo_growth_rate * dark_matter_mass  # Dark matter halo growth rate
 
     return t, inflation, galaxy_formation_rate, mass_density, total_mass, stellar_mass, black_hole_mass, gas_mass, dark_matter_mass
 
@@ -46,14 +50,31 @@ def display_galaxy_formation_and_density(stdscr):
     gas_mass = 1e11  # Initial gas mass (kg)
     dark_matter_mass = 1e12  # Initial dark matter mass (kg)
     star_formation_rate = 0.01  # Initial star formation rate
+    time_delay = 0.1  # Time step delay (seconds)
 
-    # Initialize curses
     curses.curs_set(0)  # Hide the cursor
 
     while True:
         # Simulate data
-        t, inflation, galaxy_formation_rate, mass_density, total_mass, stellar_mass, black_hole_mass, gas_mass, dark_matter_mass = simulate_galaxy_formation_and_density(
-            time_step, cosmic_inflation_factor, total_mass, stellar_mass, black_hole_mass, gas_mass, dark_matter_mass, star_formation_rate)
+        (
+            t,
+            inflation,
+            galaxy_formation_rate,
+            mass_density,
+            total_mass,
+            stellar_mass,
+            black_hole_mass,
+            gas_mass,
+            dark_matter_mass,
+        ) = simulate_galaxy_formation_and_density(
+            time_step,
+            total_mass,
+            stellar_mass,
+            black_hole_mass,
+            gas_mass,
+            dark_matter_mass,
+            star_formation_rate,
+        )
 
         # Update averages
         avg_inflation = (avg_inflation * time_step + inflation) / (time_step + 1)
@@ -65,15 +86,15 @@ def display_galaxy_formation_and_density(stdscr):
 
         # Print headers
         stdscr.addstr(0, 0, f"Time Step: {time_step}")
-        stdscr.addstr(1, 0, f"{'Time':>10} | {'Inflation Factor':>20} | {'Galaxy Formation Rate':>25} | {'Mass Density (kg/m^3)':>25}")
+        stdscr.addstr(1, 0, f"{'Time (Gyr)':>12} | {'Inflation Factor':>20} | {'Galaxy Formation Rate (kg)':>25} | {'Mass Density (kg/m^3)':>25}")
         stdscr.addstr(2, 0, "-" * 90)
 
         # Print current values
-        stdscr.addstr(3, 0, f"{t:10.4f} | {inflation:20.2e} | {galaxy_formation_rate:25.2e} | {mass_density:25.2e}")
+        stdscr.addstr(3, 0, f"{t:12.4f} | {inflation:20.2e} | {galaxy_formation_rate:25.2e} | {mass_density:25.2e}")
 
         # Print average values
         stdscr.addstr(5, 0, "Average Values:")
-        stdscr.addstr(6, 0, f"{'':>10} | {avg_inflation:20.2e} | {avg_galaxy_formation_rate:25.2e} | {avg_mass_density:25.2e}")
+        stdscr.addstr(6, 0, f"{'':>12} | {avg_inflation:20.2e} | {avg_galaxy_formation_rate:25.2e} | {avg_mass_density:25.2e}")
 
         # Print mass information
         stdscr.addstr(8, 0, "Mass Information:")
@@ -83,13 +104,31 @@ def display_galaxy_formation_and_density(stdscr):
         stdscr.addstr(12, 0, f"Gas Mass: {gas_mass:.2e} kg")
         stdscr.addstr(13, 0, f"Dark Matter Mass: {dark_matter_mass:.2e} kg")
 
+        # Display controls
+        stdscr.addstr(15, 0, "Controls: [UP] Increase SFR  [DOWN] Decrease SFR  [LEFT] Slow Down  [RIGHT] Speed Up  [Q] Quit")
+
         # Refresh the screen
         stdscr.refresh()
 
-        # Sleep for a short time before the next update
-        time.sleep(0.1)
+        # Handle input
+        stdscr.nodelay(True)
+        try:
+            key = stdscr.getkey()
+            if key == "KEY_UP":
+                star_formation_rate = min(star_formation_rate + 0.001, 0.05)
+            elif key == "KEY_DOWN":
+                star_formation_rate = max(star_formation_rate - 0.001, 0.001)
+            elif key == "KEY_RIGHT":
+                time_delay = max(0.01, time_delay - 0.01)
+            elif key == "KEY_LEFT":
+                time_delay += 0.01
+            elif key.lower() == "q":
+                break
+        except Exception:
+            pass
 
-        # Increment time step
+        # Sleep for a short time before the next update
+        time.sleep(time_delay)
         time_step += 1
 
 # Main function

@@ -4,172 +4,148 @@ import time
 import numpy as np
 from collections import defaultdict
 
-# Constants for particle types
-PARTICLES = [
-    "Electron", "Positron", "Electron Neutrino", "Muon", "Anti-Muon", "Muon Neutrino",
-    "Tau", "Anti-Tau", "Tau Neutrino", "Up Quark", "Down Quark", "Charm Quark",
-    "Strange Quark", "Top Quark", "Bottom Quark", "Photon", "Gluon", "W Boson",
-    "Z Boson", "Higgs Boson", "Proton", "Neutron", "Pion", "Kaon"
-]
+# Constants
+c = 3e8  # Speed of light (m/s)
+hbar = 6.582119569e-25  # Reduced Planck constant (GeV*s)
+k_b = 8.617333262145e-5  # Boltzmann constant (GeV/K)
+G = 6.67430e-11  # Gravitational constant (m^3/kg/s^2)
 
-# Particle masses (in GeV/c^2)
-PARTICLE_MASSES = {
-    "Electron": 0.000511,
-    "Positron": 0.000511,
-    "Electron Neutrino": 1e-9,
-    "Muon": 0.105,
-    "Anti-Muon": 0.105,
-    "Muon Neutrino": 1e-9,
-    "Tau": 1.777,
-    "Anti-Tau": 1.777,
-    "Tau Neutrino": 1e-9,
-    "Up Quark": 0.0022,
-    "Down Quark": 0.0047,
-    "Charm Quark": 1.28,
-    "Strange Quark": 0.096,
-    "Top Quark": 172.76,
-    "Bottom Quark": 4.18,
-    "Photon": 0.0,
-    "Gluon": 0.0,
-    "W Boson": 80.379,
-    "Z Boson": 91.1876,
-    "Higgs Boson": 125.1,
-    "Proton": 0.938,
-    "Neutron": 0.939,
-    "Pion": 0.135,
-    "Kaon": 0.494
+# Particle Data
+PARTICLES = {
+    "Electron": {"mass": 0.000511, "charge": -1, "spin": 0.5, "lifetime": 1e30, "type": "fermion"},
+    "Positron": {"mass": 0.000511, "charge": +1, "spin": 0.5, "lifetime": 1e30, "type": "fermion"},
+    "Electron Neutrino": {"mass": 1e-9, "charge": 0, "spin": 0.5, "lifetime": 1e30, "type": "fermion"},
+    "Muon": {"mass": 0.105, "charge": -1, "spin": 0.5, "lifetime": 2.2e-6, "type": "fermion"},
+    "Anti-Muon": {"mass": 0.105, "charge": +1, "spin": 0.5, "lifetime": 2.2e-6, "type": "fermion"},
+    "Muon Neutrino": {"mass": 1e-9, "charge": 0, "spin": 0.5, "lifetime": 1e30, "type": "fermion"},
+    "Tau": {"mass": 1.777, "charge": -1, "spin": 0.5, "lifetime": 2.9e-13, "type": "fermion"},
+    "Anti-Tau": {"mass": 1.777, "charge": +1, "spin": 0.5, "lifetime": 2.9e-13, "type": "fermion"},
+    "Tau Neutrino": {"mass": 1e-9, "charge": 0, "spin": 0.5, "lifetime": 1e30, "type": "fermion"},
+    "Photon": {"mass": 0.0, "charge": 0, "spin": 1, "lifetime": 1e30, "type": "boson"},
+    "Neutron": {"mass": 0.939, "charge": 0, "spin": 0.5, "lifetime": 880.2, "type": "fermion"},
+    "Proton": {"mass": 0.938, "charge": +1, "spin": 0.5, "lifetime": 1e30, "type": "fermion"},
+    "Gluon": {"mass": 0.0, "charge": 0, "spin": 1, "lifetime": 1e-23, "type": "boson"},
+    "W Boson": {"mass": 80.379, "charge": +1, "spin": 1, "lifetime": 3e-25, "type": "boson"},
+    "Z Boson": {"mass": 91.1876, "charge": 0, "spin": 1, "lifetime": 3e-25, "type": "boson"},
+    "Higgs Boson": {"mass": 125.1, "charge": 0, "spin": 0, "lifetime": 1.56e-22, "type": "boson"},
 }
 
-# Define the volume of space (in cubic meters)
-VOLUME = 1  # 1 cubic meter
+# Particle Decay Channels (Branching Ratios)
+DECAY_CHANNELS = {
+    "Neutron": [("Proton", "Electron", "Electron Neutrino")],
+    "Muon": [("Electron", "Muon Neutrino", "Electron Neutrino")],
+    "Tau": [("Muon", "Muon Neutrino", "Tau Neutrino"), ("Electron", "Electron Neutrino", "Tau Neutrino")],
+    "W Boson": [("Electron", "Electron Neutrino"), ("Muon", "Muon Neutrino"), ("Tau", "Tau Neutrino")],
+    "Z Boson": [("Electron", "Positron"), ("Muon", "Anti-Muon")],
+}
 
-# Initialize particle counts
+# Simulation Space
+VOLUME = 1  # Initial volume in cubic meters
 particle_counts = defaultdict(int)
-total_particle_counts = defaultdict(int)
 total_energy = 0.0
-total_momentum = defaultdict(float)
-total_lifetime = defaultdict(float)
-total_energy_spectrum = defaultdict(list)
-total_temperature = 0.0
-total_density_fluctuations = 0.0
-total_cross_sections = {}
-total_boundary_effects = defaultdict(float)
-total_gravitational_effects = defaultdict(float)
-total_experiment_comparison = 0.0
-total_interactions = 0
+total_momentum = 0.0
+temperature = 2.7  # Approximation to the CMB temperature (Kelvin)
+entropy = 0.0
 time_steps = 0
+time_delay = 0.1  # Time step duration (seconds)
 
 def zero_point_energy(mass):
-    """
-    Calculate the zero-point energy of a quantum harmonic oscillator.
-    E_0 = (1/2) * hbar * omega
-    Here, omega = sqrt(k/m) and k is approximated by m * c^2 for simplicity.
-    """
-    c = 3e8  # Speed of light in m/s
-    hbar = 6.582119569e-25  # Reduced Planck constant in GeV*s
+    """Calculate zero-point energy for a particle."""
     omega = c * np.sqrt(mass)
     return 0.5 * hbar * omega
 
+def decay_particle(particle):
+    """Handle particle decay using branching ratios."""
+    if particle in DECAY_CHANNELS:
+        decay_products = random.choice(DECAY_CHANNELS[particle])
+        particle_counts[particle] -= 1
+        for product in decay_products:
+            particle_counts[product] += 1
+
 def simulate_vacuum_energy():
-    """
-    Simulates the vacuum energy field and the potential for virtual particle pair creation.
-    """
-    global total_energy, total_momentum, total_lifetime, total_energy_spectrum
-    global total_temperature, total_density_fluctuations, total_cross_sections
-    global total_boundary_effects, total_gravitational_effects, total_experiment_comparison
-    global total_interactions, time_steps
+    """Simulates particle interactions in the vacuum."""
+    global total_energy, total_momentum, entropy, temperature, time_steps
 
-    # Randomly decide whether a particle pair is created or annihilated
+    # Particle creation/annihilation
+    particle_type = random.choice(list(PARTICLES.keys()))
     action = random.choice(["create", "annihilate"])
-    particle_type = random.choice(PARTICLES[:-4])  # Exclude hadrons and gauge bosons from creation/annihilation
-
     if action == "create":
         particle_counts[particle_type] += 1
-        total_particle_counts[particle_type] += 1
     elif action == "annihilate" and particle_counts[particle_type] > 0:
         particle_counts[particle_type] -= 1
-        if particle_type in ["Electron", "Positron", "Muon", "Anti-Muon", "Tau", "Anti-Tau", "Quark", "Anti-Quark"]:
-            particle_counts["Photon"] += 2  # Pair annihilation produces photons
-            total_particle_counts["Photon"] += 2
-        total_interactions += 1
+        # Produce photons during annihilation
+        if particle_type in ["Electron", "Positron", "Muon", "Anti-Muon"]:
+            particle_counts["Photon"] += 2
 
-    # Calculate the vacuum energy
-    current_energy = sum(zero_point_energy(PARTICLE_MASSES[pt]) * count for pt, count in particle_counts.items())
+    # Handle decays
+    for particle, count in list(particle_counts.items()):
+        if count > 0 and PARTICLES[particle]["lifetime"] < 1e30:  # Decay only for unstable particles
+            if random.random() < 1 / PARTICLES[particle]["lifetime"]:
+                decay_particle(particle)
+
+    # Compute energy and momentum
+    current_energy = sum(zero_point_energy(PARTICLES[p]["mass"]) * count for p, count in particle_counts.items() if p in PARTICLES)
+    current_momentum = sum(PARTICLES[p]["mass"] * c * count for p, count in particle_counts.items() if p in PARTICLES)
     total_energy += current_energy
+    total_momentum += current_momentum
 
-    # Calculate momentum distribution
-    for pt, count in particle_counts.items():
-        total_momentum[pt] += np.sqrt(2 * zero_point_energy(PARTICLE_MASSES[pt]) / VOLUME)
-
-    # Calculate average particle lifetime
-    for pt, count in particle_counts.items():
-        total_lifetime[pt] += 1 / (count + 1)  # Simple approximation
-
-    # Calculate energy spectrum
-    for pt, count in particle_counts.items():
-        total_energy_spectrum[pt].append(zero_point_energy(PARTICLE_MASSES[pt]))
-
-    # Calculate temperature (average energy per degree of freedom)
-    total_temperature += current_energy / len(particle_counts)  # Approximation
-
-    # Calculate density fluctuations (standard deviation of particle counts)
-    total_density_fluctuations += np.std(list(particle_counts.values()))
-
-    # Calculate interaction cross-sections (sum of all particle counts)
-    total_cross_sections[time_steps] = sum(particle_counts.values())
-
-    # Calculate boundary effects (e.g., confinement effects)
-    total_boundary_effects[time_steps] = 0.0  # Placeholder for future implementation
-
-    # Calculate gravitational effects (e.g., gravitational redshift)
-    total_gravitational_effects[time_steps] = 0.0  # Placeholder for future implementation
-
-    # Calculate comparison with experimental data or theoretical predictions
-    total_experiment_comparison += 0.0  # Placeholder for future implementation
+    # Update temperature and entropy
+    temperature = current_energy / (len(particle_counts) * k_b) if particle_counts else temperature
+    entropy += k_b * len(particle_counts)
 
     time_steps += 1
-
-    return current_energy / VOLUME  # Scale energy to per cubic meter
+    return current_energy / VOLUME  # Energy density
 
 def display_vacuum_simulation(stdscr):
-    """
-    Displays the vacuum energy field simulation using curses.
-    """
+    """Displays the vacuum simulation using curses."""
+    global VOLUME, time_delay
+
     time_step = 0
     while True:
         stdscr.clear()
-
-        # Simulate vacuum energy field
         current_energy = simulate_vacuum_energy()
-        average_energy = total_energy / (time_steps * VOLUME)
-
-        # Display the current state
         stdscr.addstr(0, 0, f"Time Step: {time_step}")
-        stdscr.addstr(1, 0, f"{'Particle':<15} | {'Count':<10} | {'Total Count':<12} | {'Zero-point Energy (GeV)':<25}")
-        stdscr.addstr(2, 0, "-" * 65)
+        stdscr.addstr(1, 0, f"Volume: {VOLUME} m^3")
+        stdscr.addstr(2, 0, f"Current Vacuum Energy Density: {current_energy:.6e} GeV/m^3")
+        stdscr.addstr(3, 0, f"Temperature: {temperature:.6e} K")
+        stdscr.addstr(4, 0, f"Entropy: {entropy:.6e} GeV/K")
+        stdscr.addstr(5, 0, f"Total Momentum: {total_momentum:.6e} kg*m/s")
+        stdscr.addstr(7, 0, f"{'Particle':<15} | {'Count':<10} | {'Energy (GeV)':<15}")
+        stdscr.addstr(8, 0, "-" * 50)
+        row = 9
+        for particle, count in particle_counts.items():
+            if particle in PARTICLES:
+                energy = zero_point_energy(PARTICLES[particle]["mass"]) * count
+                stdscr.addstr(row, 0, f"{particle:<15} | {count:<10} | {energy:<15.6e}")
+                row += 1
 
-        for i, particle in enumerate(PARTICLES, start=3):
-            count = particle_counts[particle]
-            total_count = total_particle_counts[particle]
-            zpe = zero_point_energy(PARTICLE_MASSES[particle]) * count
-            stdscr.addstr(i, 0, f"{particle:<15} | {count:<10} | {total_count:<12} | {zpe:<25.6e}")
-
-        stdscr.addstr(i + 2, 0, f"Current Vacuum Energy (per cubic meter): {current_energy:.6e} GeV")
-        stdscr.addstr(i + 3, 0, f"Average Vacuum Energy (per cubic meter): {average_energy:.6e} GeV")
-        stdscr.addstr(i + 4, 0, f"Total Interactions: {total_interactions}")
-
-        # Refresh the screen
+        stdscr.addstr(row + 2, 0, "Controls: [UP] Increase Volume  [DOWN] Decrease Volume")
+        stdscr.addstr(row + 3, 0, "          [LEFT] Slow Down  [RIGHT] Speed Up  [Q] Quit")
+        
         stdscr.refresh()
 
-        # Sleep for a short time before the next update
-        time.sleep(0.1)
+        # Handle input
+        stdscr.nodelay(True)
+        try:
+            key = stdscr.getkey()
+            if key == "KEY_UP":
+                VOLUME += 1
+            elif key == "KEY_DOWN" and VOLUME > 1:
+                VOLUME -= 1
+            elif key == "KEY_RIGHT":
+                time_delay = max(0.01, time_delay - 0.01)  # Speed up
+            elif key == "KEY_LEFT":
+                time_delay += 0.01  # Slow down
+            elif key.lower() == "q":
+                break
+        except Exception:
+            pass  # No input received
 
-        # Increment time step
+        time.sleep(time_delay)
         time_step += 1
 
 def main(stdscr):
-    # Initialize curses
-    curses.curs_set(0)  # Hide the cursor
+    curses.curs_set(0)
     display_vacuum_simulation(stdscr)
 
 if __name__ == "__main__":

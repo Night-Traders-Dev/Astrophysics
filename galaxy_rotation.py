@@ -4,12 +4,11 @@ import os
 
 # Constants
 G = 6.67430e-11  # gravitational constant (m^3 kg^-1 s^-2)
-a_0 = 1e-10  # critical acceleration scale parameter (m/s^2)
 
 # Define the NFW dark matter density profile
 def nfw_density_profile(radius, scale_radius, rho_0):
     x = radius / scale_radius
-    return rho_0 / (x * (1 + x) ** 2)
+    return rho_0 / (x * (1 + x)**2) if x > 0 else rho_0
 
 # Function to calculate gravitational potential due to dark matter
 def dark_matter_potential(radius, scale_radius, rho_0):
@@ -21,12 +20,12 @@ def dark_matter_potential(radius, scale_radius, rho_0):
 # Function to calculate rotational velocity due to dark matter
 def rotational_velocity_dark_matter(radius, scale_radius, rho_0):
     potential = dark_matter_potential(radius, scale_radius, rho_0)
-    velocity = np.sqrt(-potential / radius)
+    velocity = np.sqrt(-potential / radius) if radius > 0 else 0
     return velocity
 
 # Function to calculate rotational velocity using Newtonian gravity
 def rotational_velocity_newton(radius, mass):
-    return np.sqrt(G * mass / radius)
+    return np.sqrt(G * mass / radius) if radius > 0 else 0
 
 # Gas density profile function
 def gas_density_profile(radius):
@@ -36,17 +35,25 @@ def gas_density_profile(radius):
 def simulate_galaxy_rotation(radius, initial_mass, dark_matter_scale_radius, dark_matter_rho_0, gas_density_profile, time_step, mass_change_rate, stellar_population, gas_mass, stellar_mass):
     current_mass = initial_mass
     while True:
-        newtonian_velocities = rotational_velocity_newton(radius, current_mass + gas_mass + np.sum(list(stellar_mass.values()), axis=0))
-        dark_matter_velocities = rotational_velocity_dark_matter(radius, dark_matter_scale_radius, dark_matter_rho_0)
+        # Calculate velocities
+        newtonian_velocities = np.array([
+            rotational_velocity_newton(r, current_mass + gas_mass + np.sum([m[i] for m in stellar_mass.values()]))
+            for i, r in enumerate(radius)
+        ])
+        dark_matter_velocities = np.array([
+            rotational_velocity_dark_matter(r, dark_matter_scale_radius, dark_matter_rho_0) for r in radius
+        ])
         total_velocities = np.sqrt(newtonian_velocities**2 + dark_matter_velocities**2)
+
         yield total_velocities
+
         # Update mass for the next time step
         gas_mass += mass_change_rate * time_step  # Gas accretion rate
         star_formation_rate = 0.01 * gas_mass  # Star formation efficiency
         for name, properties in stellar_population.items():
             stellar_mass_change = properties['formation_rate'] * time_step
             stellar_mass[name] += stellar_mass_change  # Increase in stellar mass
-            gas_mass -= stellar_mass_change  # Depletion of gas mass
+            gas_mass -= stellar_mass_change  # Deplete gas mass
         current_mass += mass_change_rate * time_step  # Increase in total mass
 
 # Function to display galaxy rotation including details for each factor
@@ -57,10 +64,10 @@ def display_galaxy_rotation(radius, initial_mass, dark_matter_scale_radius, dark
         total_velocities = next(simulation)
         os.system('cls' if os.name == 'nt' else 'clear')  # Clear the screen
         print(f"Time Step: {t}")
-        print("Radius (kpc) | Total Velocity (km/s)")
-        print("-" * 40)
-        for r, v_total in zip(radius, total_velocities):
-            print(f"{r:10.2f} | {v_total:20.2f}")
+        print("Radius (kpc) | Dark Matter Velocity (km/s) | Total Velocity (km/s)")
+        print("-" * 60)
+        for r, v_dm, v_total in zip(radius, [rotational_velocity_dark_matter(r, dark_matter_scale_radius, dark_matter_rho_0) for r in radius], total_velocities):
+            print(f"{r:10.2f} | {v_dm:25.2f} | {v_total:25.2f}")
         print("\nAdditional Information:")
         print(f"Dark Matter Scale Radius: {dark_matter_scale_radius} kpc")
         print(f"Dark Matter Central Density: {dark_matter_rho_0} kg/m^3")
@@ -71,8 +78,8 @@ def display_galaxy_rotation(radius, initial_mass, dark_matter_scale_radius, dark
         for name, properties in stellar_population.items():
             print(f"- {name}:")
             print(f"  - Star Formation Rate: {properties['formation_rate']} (arbitrary units)")
-            print(f"  - Mass: {np.sum(stellar_mass[name])} kg")
-        print(f"Total Galaxy Mass: {np.sum(initial_mass) + gas_mass + np.sum([np.sum(m) for m in stellar_mass.values()])} kg")
+            print(f"  - Mass: {np.sum(stellar_mass[name]):.2e} kg")
+        print(f"Total Galaxy Mass: {initial_mass + gas_mass + np.sum([np.sum(m) for m in stellar_mass.values()]):.2e} kg")
         time.sleep(0.1)  # Adjust sleep time as needed
         t += 1
 
@@ -82,7 +89,8 @@ def add_stellar_population(stellar_population, name, formation_rate):
 
 # Function to remove a stellar population
 def remove_stellar_population(stellar_population, name):
-    del stellar_population[name]
+    if name in stellar_population:
+        del stellar_population[name]
 
 # Run simulation including dark matter, dynamical mass variation, gas dynamics, and multiple stellar populations
 def main():
@@ -93,16 +101,15 @@ def main():
     dark_matter_rho_0 = 1e9  # central density of dark matter halo (kg/m^3)
     time_step = 1  # time step (arbitrary units)
     mass_change_rate = 1e10  # rate of change of mass per time step (kg/time step)
-    
+
     # Define properties of multiple stellar populations
     stellar_population = {
         'Population 1': {'formation_rate': 0.001},  # Example star formation rate for Population 1
         'Population 2': {'formation_rate': 0.002}   # Example star formation rate for Population 2
-        # Add more populations as needed
     }
 
     # Initial gas mass and stellar mass for each population
-    gas_mass = 0
+    gas_mass = 1e10  # Initial gas mass (kg)
     stellar_mass = {name: np.zeros_like(radius) for name in stellar_population}
 
     # Display galaxy rotation including dark matter, dynamical mass variation, gas dynamics, and multiple stellar populations
