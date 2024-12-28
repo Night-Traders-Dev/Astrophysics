@@ -1,0 +1,86 @@
+import curses
+import time
+import random
+import numpy as np
+from collections import defaultdict
+from modules.dictionaries.particles import PARTICLES
+from modules.dictionaries.decay_channels import DECAY_CHANNELS
+from modules.dictionaries.interaction_channels import INTERACTION_CHANNELS
+from modules.constants import *
+from modules.utils.calculations import *
+from modules.utils.metrics import calculate_metrics
+
+def display_simulation(stdscr):
+    """Main display function for the simulation."""
+    global MODE, VOLUME, timestep_multiplier, time_delay
+
+    # Initialize timer
+    start_time = time.time()
+
+    while True:
+        # Calculate elapsed time and adjusted timestep
+        elapsed_time = time.time() - start_time
+        adjusted_timestep = timestep_multiplier * time_delay
+
+        # Update simulation
+        simulate_vacuum_energy(adjusted_timestep)
+
+        # Clear screen
+        stdscr.clear()
+
+        # Display simulation data
+        metrics = calculate_metrics(elapsed_time)
+        stdscr.addstr(0, 0, f"Mode: {MODE}")
+        stdscr.addstr(1, 0, f"Elapsed Earth Time: {elapsed_time:.2f}s | Simulation Timesteps: {metrics['timesteps']}")
+        stdscr.addstr(2, 0, f"Timestep Multiplier: {timestep_multiplier}x | Effective Timestep: {adjusted_timestep:.2e}s")
+        stdscr.addstr(3, 0, f"Total Particles: {metrics['total_particles']}")
+        stdscr.addstr(4, 0, f"Decayed Naturally: {metrics['decayed_natural']} | Decayed via Interaction: {metrics['decayed_interaction']}")
+        stdscr.addstr(5, 0, f"Average Appearance Time: {metrics['avg_appearance_time']:.2f}s")
+        stdscr.addstr(6, 0, f"Volume: {VOLUME:.2f} m³ | Temperature: {metrics['temperature']:.2f} K | Entropy: {metrics['entropy']:.2f}")
+        stdscr.addstr(7, 0, f"Radiation Density: {radiation_density():.2e} GeV/m³")
+        stdscr.addstr(8, 0, f"Gravitational Potential: {gravitational_potential():.2e} J")
+
+        # Display particle counts
+        row = 10
+        stdscr.addstr(row, 0, f"{'Particle':<15} | {'Count':<10}")
+        row += 1
+        stdscr.addstr(row, 0, "-" * 30)
+        row += 1
+        for particle, count in metrics["particle_counts"].items():
+            stdscr.addstr(row, 0, f"{particle:<15} | {count:<10}")
+            row += 1
+
+        # Display controls
+        row += 2
+        stdscr.addstr(row, 0, "Controls: [M] Toggle Mode  [R] Reset  [+/-] Adjust Timestep  [UP/DOWN/LEFT/RIGHT] Adjust Volume  [Q] Quit")
+
+        # Refresh display
+        stdscr.refresh()
+
+        # Handle input
+        stdscr.nodelay(True)
+        try:
+            key = stdscr.getkey()
+            if key.lower() == "m":
+                MODE = "Big Bang" if MODE == "Default" else "Default"
+                reset_simulation()
+            elif key.lower() == "r":
+                reset_simulation()
+            elif key == "+":
+                timestep_multiplier = min(timestep_multiplier * 10, 1e9)
+            elif key == "-":
+                timestep_multiplier = max(timestep_multiplier / 10, 1)
+            elif key == "KEY_UP":
+                VOLUME += 1
+            elif key == "KEY_DOWN" and VOLUME > 1:
+                VOLUME -= 1
+            elif key == "KEY_RIGHT":
+                time_delay = max(0.01, time_delay - 0.01)
+            elif key == "KEY_LEFT":
+                time_delay += 0.01
+            elif key.lower() == "q":
+                break
+        except Exception:
+            pass
+
+        time.sleep(time_delay)
