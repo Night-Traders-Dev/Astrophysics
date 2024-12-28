@@ -5,6 +5,7 @@ from modules.dictionaries.particles import PARTICLES
 from modules.dictionaries.decay_channels import DECAY_CHANNELS
 from modules.dictionaries.interaction_channels import INTERACTION_CHANNELS
 
+
 def hubble_expansion(volume, adjusted_timestep):
     H = H0 * 1e3 / (3.086e22)
     return volume * (1 + H * adjusted_timestep)
@@ -66,17 +67,7 @@ def gravitational_potential():
                 total_potential += -G * PARTICLES[p1]["mass"] * PARTICLES[p2]["mass"] * c1 * c2 / r
     return total_potential
 
-def reset_simulation():
-    global VOLUME, total_energy, temperature, entropy, time_steps, particle_counts, total_particles_created, total_particles_decayed_natural, total_particles_decayed_interaction
-    VOLUME = 1 if MODE == "Default" else 0.1
-    total_energy = 0.0
-    temperature = 2.7 if MODE == "Default" else 1e12
-    entropy = 0.0
-    time_steps = 0
-    particle_counts.clear()
-    total_particles_created = 0
-    total_particles_decayed_natural = 0
-    total_particles_decayed_interaction = 0
+
 
 
 def simulate_vacuum_energy(adjusted_timestep):
@@ -117,4 +108,4 @@ def simulate_vacuum_energy(adjusted_timestep):
 
     time_steps += adjusted_timestep
 
-    return entropy, temperature, total_energy, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, particle_counts, VOLUME, timestep_multiplier
+    return entropy, temperature, total_energy, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, particle_counts, VOLUME, timestep_multiplier, time_steps

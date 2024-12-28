@@ -2,6 +2,18 @@ import time
 from modules.constants import *
 from modules.utils.calculations import *
 
+def reset_simulation():
+    global VOLUME, total_energy, temperature, entropy, time_steps, particle_counts, total_particles_created, total_particles_decayed_natural, total_particles_decayed_interaction
+    VOLUME = 1 if MODE == "Default" else 0.1
+    total_energy = 0.0
+    temperature = 2.7 if MODE == "Default" else 1e12
+    entropy = 0.0
+    time_steps = 0
+    particle_counts.clear()
+    total_particles_created = 0
+    total_particles_decayed_natural = 0
+    total_particles_decayed_interaction = 0
+
 def display_simulation(stdscr):
     """Main display function for the simulation."""
     global total_energy, entropy, temperature, time_steps, timestep_multiplier, time_delay, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, particle_counts, VOLUME, MODE
@@ -14,7 +26,7 @@ def display_simulation(stdscr):
         adjusted_timestep = timestep_multiplier * time_delay
 
         # Update simulation
-        entropy, temperature, total_energy, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, particle_counts, VOLUME, timestep_multiplier = simulate_vacuum_energy(adjusted_timestep)
+        entropy, temperature, total_energy, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, particle_counts, VOLUME, timestep_multiplier, time_steps = simulate_vacuum_energy(adjusted_timestep)
 
         # Clear screen
         stdscr.clear()
@@ -54,8 +66,10 @@ def display_simulation(stdscr):
             key = stdscr.getkey()
             if key.lower() == "m":
                 MODE = "Big Bang" if MODE == "Default" else "Default"
+                elapsed_time = 0
                 reset_simulation()
             elif key.lower() == "r":
+                elapsed_time = 0
                 reset_simulation()
             elif key == "+":
                 timestep_multiplier = min(timestep_multiplier * 10, 1e9)
