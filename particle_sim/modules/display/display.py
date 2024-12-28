@@ -20,7 +20,6 @@ def display_simulation(stdscr):
         stdscr.clear()
 
         # Display simulation data
-#        metrics = calculate_metrics(elapsed_time)
         stdscr.addstr(0, 0, f"Mode: {MODE}")
         stdscr.addstr(1, 0, f"Elapsed Earth Time: {elapsed_time:.2f}s | Simulation Timesteps: {time_steps}")
         stdscr.addstr(2, 0, f"Timestep Multiplier: {timestep_multiplier}x | Effective Timestep: {adjusted_timestep:.2e}s")
