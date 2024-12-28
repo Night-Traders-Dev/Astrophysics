@@ -90,22 +90,27 @@ def simulate_vacuum_energy(adjusted_timestep):
             if random.random() < adjusted_timestep / PARTICLES[particle]["lifetime"]:
                 total_particles_decayed_natural = decay_particle(particle)
 
-    # Handle interactions
-    total_particles_decayed_interaction = handle_interactions()
+        # Handle interactions
+        total_particles_decayed_interaction = handle_interactions()
 
-    # Calculate energy and temperature
-    current_energy = sum(zero_point_energy(PARTICLES[p]["mass"]) * count for p, count in particle_counts.items())
-    total_energy += current_energy
-    if len(particle_counts) > 0:
-        temperature = current_energy / (len(particle_counts) * k_b * VOLUME)
+        # Calculate energy and temperature
+        current_energy = sum(zero_point_energy(PARTICLES[p]["mass"]) * count for p, count in particle_counts.items())
+        total_energy += current_energy
+        total_particle_count = sum(particle_counts.values())
+        if total_particle_count > 0:
+            temperature = total_energy / (total_particle_count * k_b * VOLUME)
+        else:
+            temperature = 0  # Avoid division by zero
 
-    # Entropy based on particle count
-    entropy += k_b * len(particle_counts) * adjusted_timestep
 
-    # Expand volume in Big Bang mode
-    if MODE == "Big Bang":
-        VOLUME += 0.1 * adjusted_timestep
+        # Entropy based on particle count
+        entropy += k_b * len(particle_counts) * adjusted_timestep
 
-    time_steps += adjusted_timestep
+        # Expand volume in Big Bang mode
+        if MODE == "Big Bang":
+            VOLUME = min(VOLUME + 0.1 * adjusted_timestep, float('inf'))
+
+
+        time_steps += adjusted_timestep
 
     return entropy, temperature, total_energy, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, particle_counts, VOLUME, timestep_multiplier, time_steps

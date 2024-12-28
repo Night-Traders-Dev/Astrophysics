@@ -1,4 +1,5 @@
 import time
+import sys
 from modules.constants import *
 from modules.utils.calculations import *
 
@@ -17,10 +18,24 @@ def reset_simulation():
 def display_simulation(stdscr):
     """Main display function for the simulation."""
     global total_energy, entropy, temperature, time_steps, timestep_multiplier, time_delay, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, particle_counts, VOLUME, MODE
+    
     # Initialize timer
     start_time = time.time()
 
     while True:
+        # Get terminal dimensions
+        height, width = stdscr.getmaxyx()
+
+        # Clear screen
+        stdscr.clear()
+
+        # Check if terminal is large enough
+        if height < 15 or width < 80:
+            stdscr.addstr(0, 0, "Terminal too small. Please resize to at least 80x15.")
+            stdscr.refresh()
+            time.sleep(1)
+            continue
+
         # Calculate elapsed time and adjusted timestep
         elapsed_time = time.time() - start_time
         adjusted_timestep = timestep_multiplier * time_delay
@@ -28,15 +43,12 @@ def display_simulation(stdscr):
         # Update simulation
         entropy, temperature, total_energy, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, particle_counts, VOLUME, timestep_multiplier, time_steps = simulate_vacuum_energy(adjusted_timestep)
 
-        # Clear screen
-        stdscr.clear()
-
         # Display simulation data
         stdscr.addstr(0, 0, f"Mode: {MODE}")
-        stdscr.addstr(1, 0, f"Elapsed Earth Time: {elapsed_time:.2f}s | Simulation Timesteps: {time_steps}")
+        stdscr.addstr(1, 0, f"Elapsed Earth Time: {elapsed_time:.2f}s | Simulation Timesteps: {time_steps:.2f}")
         stdscr.addstr(2, 0, f"Timestep Multiplier: {timestep_multiplier}x | Effective Timestep: {adjusted_timestep:.2e}s")
-        stdscr.addstr(3, 0, f"Total Particles: {total_particles_created}")
-        stdscr.addstr(4, 0, f"Decayed Naturally: {total_particles_decayed_natural} | Decayed via Interaction: {total_particles_decayed_interaction}")
+        stdscr.addstr(3, 0, f"Total Particles: {total_particles_created:,}")
+        stdscr.addstr(4, 0, f"Decayed Naturally: {total_particles_decayed_natural:,} | Decayed via Interaction: {total_particles_decayed_interaction:,}")
         avg_appearance_time = elapsed_time / total_particles_created if total_particles_created > 0 else 0
         stdscr.addstr(5, 0, f"Average Appearance Time: {avg_appearance_time:.2f}s")
         stdscr.addstr(6, 0, f"Volume: {VOLUME:.2f} m³ | Temperature: {temperature:.2f} K | Entropy: {entropy:.2f}")
@@ -50,12 +62,16 @@ def display_simulation(stdscr):
         stdscr.addstr(row, 0, "-" * 30)
         row += 1
         for particle, count in particle_counts.items():
-            stdscr.addstr(row, 0, f"{particle:<15} | {count:<10}")
-            row += 1
+            if row < height - 2:
+                stdscr.addstr(row, 0, f"{particle:<15} | {count:<10}")
+                row += 1
+            else:
+                break
 
         # Display controls
         row += 2
-        stdscr.addstr(row, 0, "Controls: [M] Toggle Mode  [R] Reset  [+/-] Adjust Timestep  [UP/DOWN/LEFT/RIGHT] Adjust Volume  [Q] Quit")
+        if row < height:
+            stdscr.addstr(row, 0, "Controls: [M] Toggle Mode  [R] Reset  [+/-] Adjust Timestep  [UP/DOWN/LEFT/RIGHT] Adjust Volume  [Q] Quit")
 
         # Refresh display
         stdscr.refresh()
@@ -84,7 +100,7 @@ def display_simulation(stdscr):
             elif key == "KEY_LEFT":
                 time_delay += 0.01
             elif key.lower() == "q":
-                break
+                sys.exit()
         except Exception:
             pass
 
