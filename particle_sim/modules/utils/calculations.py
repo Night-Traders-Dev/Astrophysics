@@ -26,6 +26,7 @@ def decay_particle(particle):
         total_particles_decayed_natural += 1
         for product in random.choice(DECAY_CHANNELS[particle]):
             particle_counts[product] += 1
+    return total_particles_decayed_natural
 
 
 def handle_interactions():
@@ -41,6 +42,7 @@ def handle_interactions():
                 for product in products:
                     particle_counts[product] += 1
                 total_particles_decayed_interaction += 1
+    return total_particles_decayed_interaction
 
 
 def radiation_density():
@@ -64,7 +66,7 @@ def gravitational_potential():
 
 def simulate_vacuum_energy(adjusted_timestep):
     """Simulates particle interactions."""
-    global total_energy, entropy, temperature, time_steps, total_particles_created, total_particles_decayed_interaction, VOLUME
+    global total_energy, entropy, temperature, time_steps, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, VOLUME, particle_counts
 
     # Particle creation/annihilation
     particle_type = random.choice(list(PARTICLES.keys()))
@@ -80,10 +82,10 @@ def simulate_vacuum_energy(adjusted_timestep):
     for particle, count in list(particle_counts.items()):
         if count > 0 and PARTICLES[particle]["lifetime"] < 1e30:
             if random.random() < adjusted_timestep / PARTICLES[particle]["lifetime"]:
-                decay_particle(particle)
+                total_particles_decayed_natural = decay_particle(particle)
 
     # Handle interactions
-    handle_interactions()
+    total_particles_decayed_interaction = handle_interactions()
 
     # Calculate energy and temperature
     current_energy = sum(zero_point_energy(PARTICLES[p]["mass"]) * count for p, count in particle_counts.items())
@@ -99,3 +101,5 @@ def simulate_vacuum_energy(adjusted_timestep):
         VOLUME += 0.1 * adjusted_timestep
 
     time_steps += adjusted_timestep
+
+    return entropy, temperature, total_energy, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, particle_counts, VOLUME, timestep_multiplier

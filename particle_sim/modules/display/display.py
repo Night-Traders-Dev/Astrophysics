@@ -1,19 +1,10 @@
-import curses
 import time
-import random
-import numpy as np
-from collections import defaultdict
-from modules.dictionaries.particles import PARTICLES
-from modules.dictionaries.decay_channels import DECAY_CHANNELS
-from modules.dictionaries.interaction_channels import INTERACTION_CHANNELS
 from modules.constants import *
 from modules.utils.calculations import *
-from modules.utils.metrics import calculate_metrics
 
 def display_simulation(stdscr):
     """Main display function for the simulation."""
-    global MODE, VOLUME, timestep_multiplier, time_delay
-
+    global total_energy, entropy, temperature, time_steps, timestep_multiplier, time_delay, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, particle_counts, VOLUME, MODE
     # Initialize timer
     start_time = time.time()
 
@@ -23,20 +14,21 @@ def display_simulation(stdscr):
         adjusted_timestep = timestep_multiplier * time_delay
 
         # Update simulation
-        simulate_vacuum_energy(adjusted_timestep)
+        entropy, temperature, total_energy, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, particle_counts, VOLUME, timestep_multiplier = simulate_vacuum_energy(adjusted_timestep)
 
         # Clear screen
         stdscr.clear()
 
         # Display simulation data
-        metrics = calculate_metrics(elapsed_time)
+#        metrics = calculate_metrics(elapsed_time)
         stdscr.addstr(0, 0, f"Mode: {MODE}")
-        stdscr.addstr(1, 0, f"Elapsed Earth Time: {elapsed_time:.2f}s | Simulation Timesteps: {metrics['timesteps']}")
+        stdscr.addstr(1, 0, f"Elapsed Earth Time: {elapsed_time:.2f}s | Simulation Timesteps: {time_steps}")
         stdscr.addstr(2, 0, f"Timestep Multiplier: {timestep_multiplier}x | Effective Timestep: {adjusted_timestep:.2e}s")
-        stdscr.addstr(3, 0, f"Total Particles: {metrics['total_particles']}")
-        stdscr.addstr(4, 0, f"Decayed Naturally: {metrics['decayed_natural']} | Decayed via Interaction: {metrics['decayed_interaction']}")
-        stdscr.addstr(5, 0, f"Average Appearance Time: {metrics['avg_appearance_time']:.2f}s")
-        stdscr.addstr(6, 0, f"Volume: {VOLUME:.2f} m³ | Temperature: {metrics['temperature']:.2f} K | Entropy: {metrics['entropy']:.2f}")
+        stdscr.addstr(3, 0, f"Total Particles: {total_particles_created}")
+        stdscr.addstr(4, 0, f"Decayed Naturally: {total_particles_decayed_natural} | Decayed via Interaction: {total_particles_decayed_interaction}")
+        avg_appearance_time = elapsed_time / total_particles_created if total_particles_created > 0 else 0
+        stdscr.addstr(5, 0, f"Average Appearance Time: {avg_appearance_time:.2f}s")
+        stdscr.addstr(6, 0, f"Volume: {VOLUME:.2f} m³ | Temperature: {temperature:.2f} K | Entropy: {entropy:.2f}")
         stdscr.addstr(7, 0, f"Radiation Density: {radiation_density():.2e} GeV/m³")
         stdscr.addstr(8, 0, f"Gravitational Potential: {gravitational_potential():.2e} J")
 
@@ -46,7 +38,7 @@ def display_simulation(stdscr):
         row += 1
         stdscr.addstr(row, 0, "-" * 30)
         row += 1
-        for particle, count in metrics["particle_counts"].items():
+        for particle, count in particle_counts.items():
             stdscr.addstr(row, 0, f"{particle:<15} | {count:<10}")
             row += 1
 

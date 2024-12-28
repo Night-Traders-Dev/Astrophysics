@@ -1,6 +1,4 @@
-import time
 import curses
-from modules.utils.calculations import simulate_vacuum_energy
 from modules.display.display import display_simulation
 
 def main(stdscr):
