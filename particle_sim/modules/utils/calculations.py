@@ -25,11 +25,15 @@ def relativistic_energy(mass, speed):
 def decay_particle(particle):
     """Handle particle decay."""
     global total_particles_decayed_natural
-    if particle in DECAY_CHANNELS and particle_counts[particle] > 0:
+    if particle in DECAY_CHANNELS and particle_counts.get(particle, 0) > 0:
         particle_counts[particle] -= 1
         total_particles_decayed_natural += 1
+
         for product in random.choice(DECAY_CHANNELS[particle]):
+            if product not in particle_counts:
+                particle_counts[product] = 0
             particle_counts[product] += 1
+
     return total_particles_decayed_natural
 
 
@@ -40,23 +44,27 @@ def handle_interactions():
 
     for combination in particle_combinations:
         # Check if all particles in the combination exist
-        if all(particle_counts[particle] > 0 for particle in combination):
+        if all(particle_counts.get(particle, 0) > 0 for particle in combination):
             if random.random() < 0.01:  # Interaction probability
                 # Reduce counts for all particles involved in the interaction
                 for particle in combination:
-                    particle_counts[particle] -= 1
+                    if particle_counts[particle] > 0:  # Ensure no negative values
+                        particle_counts[particle] -= 1
 
                 # Select a random product set for this interaction
                 products = random.choice(INTERACTION_CHANNELS[combination])
 
                 # Increment counts for all products
                 for product in products:
+                    if product not in particle_counts:
+                        particle_counts[product] = 0
                     particle_counts[product] += 1
 
                 # Update total interaction count
                 total_particles_decayed_interaction += 1
 
     return total_particles_decayed_interaction
+
 
 def radiation_density():
     """Calculate radiation density."""
@@ -81,7 +89,7 @@ def gravitational_potential():
 
 def simulate_vacuum_energy(adjusted_timestep):
     """Simulates particle interactions."""
-    global total_energy, entropy, temperature, time_steps, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, VOLUME, particle_counts
+    global total_energy, entropy, temperature, time_steps, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, VOLUME, particle_counts, total_particle_count, total_particle_counts
 
     # Particle creation/annihilation
     particle_type = random.choice(list(PARTICLES.keys()))
@@ -89,8 +97,10 @@ def simulate_vacuum_energy(adjusted_timestep):
     if action == "create":
         particle_counts[particle_type] += 1
         total_particles_created += 1
+        total_particle_count += 1
     elif action == "annihilate" and particle_counts[particle_type] > 0:
         particle_counts[particle_type] -= 1
+        total_particle_count -= 1
         total_particles_decayed_interaction += 1
 
     # Handle particle decay
@@ -122,4 +132,4 @@ def simulate_vacuum_energy(adjusted_timestep):
 
         time_steps += adjusted_timestep
 
-    return entropy, temperature, total_energy, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, particle_counts, VOLUME, timestep_multiplier, time_steps
+    return entropy, temperature, total_energy, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, particle_counts, VOLUME, timestep_multiplier, time_steps, total_particle_count, total_particle_counts
