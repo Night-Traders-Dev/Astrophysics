@@ -13,7 +13,7 @@ H0_in_s = H0 * 1e3 / (3.086e22)  # Hubble's constant converted to 1/s
 
 # Simulation Variables
 MODE = "Default"
-VOLUME = 1.0
+VOLUME = 100000.0
 particle_counts = defaultdict(int)
 total_particle_counts = defaultdict(int)
 total_energy = 0.0

@@ -79,30 +79,34 @@ def display_simulation(stdscr):
 
         # Display simulation data
         stdscr.addstr(0, 0, f"Mode: {MODE}")
-        stdscr.addstr(1, 0, f"Elapsed Earth Time: {elapsed_time:.2f}s | Simulation Timesteps: {time_steps:.2f}")
+        stdscr.addstr(1, 0, f"Elapsed Earth Time: {elapsed_time:,.2f}s | Simulation Timesteps: {time_steps:,.2f}")
         stdscr.addstr(2, 0, f"Timestep Multiplier: {timestep_multiplier}x | Effective Timestep: {adjusted_timestep:.2e}s")
         stdscr.addstr(3, 0, f"Total Particles: {total_particles_created:,} | Rate: {particles_created_per_second:.2f} particles/s")
         stdscr.addstr(4, 0, f"Decayed Naturally: {total_particles_decayed_natural:,} | Rate: {decayed_natural_per_second:.2f} decays/s")
         stdscr.addstr(5, 0, f"Decayed via Interaction: {total_particles_decayed_interaction:,} | Rate: {decayed_interaction_per_second:.2f} decays/s")
         avg_appearance_time = elapsed_time / total_particles_created if total_particles_created > 0 else 0
         stdscr.addstr(6, 0, f"Average Appearance Time: {avg_appearance_time:.2f}s")
-        stdscr.addstr(7, 0, f"Volume: {VOLUME:.2f} m³ | Temperature: {temperature:.2f} K | Entropy: {entropy:.2f}")
+        stdscr.addstr(7, 0, f"Volume: {VOLUME:,.2f} m³ | Temperature: {temperature:,.2f} K | Entropy: {entropy:,.2f}")
         stdscr.addstr(8, 0, f"Radiation Density: {radiation_density():.2e} GeV/m³")
         stdscr.addstr(9, 0, f"Gravitational Potential: {gravitational_potential():.2e} J")
 
         # Display particle counts
         row = 11
-        stdscr.addstr(row, 0, f"{'Particle':<15} | {'Current Count':<15} | {'Total Count':<15} | {'Percentage':<12} | {'New Avg':<10}")
+        stdscr.addstr(row, 0, f"{'Particle':<30} | {'Current Count':<15} | {'Total Count':<15} | {'Percentage':<12} | {'New Avg':<10}")
         row += 1
         stdscr.addstr(row, 0, "-" * 85)
         row += 1
-        total_particles_overall = sum(total_particle_counts.values())
-        for particle, count in particle_counts.items():
+        total_particles_overall = sum(particle_counts.values())
+        # Sort the particles by their percentage high to low, protecting against division by zero
+        sorted_particles = sorted(particle_counts.items(), key=lambda x: (x[1] / total_particles_created * 100) if total_particles_created > 0 else 0, reverse=True)
+
+
+        for particle, count in sorted_particles:
             if row < height - 2:
                 total_count = total_particle_counts.get(particle, 0)
                 percentage = (count / total_particles_created) * 100 if total_particles_created > 0 else 0
                 new_avg = total_count / total_particles_overall if total_particles_overall > 0 else 0
-                stdscr.addstr(row, 0, f"{particle:<15} | {count:<15,} | {total_count:<15,} | {percentage:.2f}%     | {new_avg:.2f}")
+                stdscr.addstr(row, 0, f"{particle:<30} | {count:<15,} | {total_count:<15,} | {percentage:.2f}%{"":<7} | {new_avg:.2f}")
                 row += 1
             else:
                 break

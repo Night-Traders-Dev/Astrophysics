@@ -86,6 +86,28 @@ def gravitational_potential():
 
 
 
+def decide_particle_action():
+    """Decides whether to create or annihilate a particle based on its appearance probability and lifetime."""
+    # Choose a particle type
+    particle_type = random.choice(list(PARTICLES.keys()))
+    
+    # Get the particle's properties
+    particle = PARTICLES[particle_type]
+    creation_probability = particle["probability"]
+    lifetime = particle["lifetime"]
+    
+
+    if random.random() < creation_probability:
+        action = "create"
+    else:
+        decay_probability = min(1, time.time() / lifetime)  # The decay probability increases over time
+        if random.random() < decay_probability:
+            action = "annihilate"
+        else:
+            action = "create"
+    
+    return particle_type, action
+
 
 def simulate_vacuum_energy(adjusted_timestep):
     """Simulates particle interactions."""
