@@ -3,6 +3,21 @@ INTERACTION_CHANNELS = {
     ("Proton", "Neutron"): [("Deuterium", "Photon")],
     ("Proton", "Electron"): [("Neutron", "Electron Neutrino")],
     ("Neutron", "Electron Neutrino"): [("Proton", "Electron")],
+    # Synthesis of Tritium (H-3)
+    ("Deuterium", "Neutron"): [("Tritium", "Photon")],
+    ("Proton", "Neutron", "Neutron"): [("Tritium",)],
+
+    # Decay of Tritium
+    ("Tritium",): [("Helium-3", "Electron", "Anti-Electron Neutrino")],
+
+    # Synthesis of Helium-3 (He-3)
+    ("Deuterium", "Proton"): [("Helium-3", "Photon")],
+    ("Tritium", "Proton"): [("Helium-3", "Neutron")],
+
+    # Synthesis of Helium-4 (He-4)
+    ("Helium-3", "Neutron"): [("Helium-4", "Photon")],
+    ("Deuterium", "Deuterium"): [("Helium-4", "Neutron", "Photon")],
+
 
     # Leptonic interactions
     ("Electron", "Positron"): [("Photon", "Photon")],

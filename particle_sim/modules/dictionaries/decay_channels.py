@@ -26,7 +26,6 @@ DECAY_CHANNELS = {
         ("Down Quark", "Anti-Down Quark"),
         ("Charm Quark", "Anti-Charm Quark"),
         ("Strange Quark", "Anti-Strange Quark"),
-#        ("Neutrino", "Anti-Neutrino"),
     ],
     "Higgs Boson": [
         ("Bottom Quark", "Anti-Bottom Quark"),
@@ -59,4 +58,11 @@ DECAY_CHANNELS = {
     "Electron Neutrino": [("Muon Neutrino",)],
     "Muon Neutrino": [("Tau Neutrino",)],
     "Tau Neutrino": [("Electron Neutrino",)],
+    # Tritium (H-3) decay
+    "Tritium": [("Helium-3", "Electron", "Anti-Electron Neutrino")],
+
+    # Helium-3 (He-3) and Helium-4 (He-4) are stable isotopes, so they don't decay.
+    "Helium-3": [],
+    "Helium-4": [],
+
 }

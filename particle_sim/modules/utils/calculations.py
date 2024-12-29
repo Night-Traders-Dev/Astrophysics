@@ -36,18 +36,27 @@ def decay_particle(particle):
 def handle_interactions():
     """Handle particle interactions."""
     global total_particles_decayed_interaction
-    particle_pairs = list(INTERACTION_CHANNELS.keys())
-    for pair in particle_pairs:
-        if particle_counts[pair[0]] > 0 and particle_counts[pair[1]] > 0:
+    particle_combinations = list(INTERACTION_CHANNELS.keys())
+
+    for combination in particle_combinations:
+        # Check if all particles in the combination exist
+        if all(particle_counts[particle] > 0 for particle in combination):
             if random.random() < 0.01:  # Interaction probability
-                particle_counts[pair[0]] -= 1
-                particle_counts[pair[1]] -= 1
-                products = random.choice(INTERACTION_CHANNELS[pair])
+                # Reduce counts for all particles involved in the interaction
+                for particle in combination:
+                    particle_counts[particle] -= 1
+
+                # Select a random product set for this interaction
+                products = random.choice(INTERACTION_CHANNELS[combination])
+
+                # Increment counts for all products
                 for product in products:
                     particle_counts[product] += 1
-                total_particles_decayed_interaction += 1
-    return total_particles_decayed_interaction
 
+                # Update total interaction count
+                total_particles_decayed_interaction += 1
+
+    return total_particles_decayed_interaction
 
 def radiation_density():
     """Calculate radiation density."""

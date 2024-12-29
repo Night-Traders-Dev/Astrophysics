@@ -39,8 +39,12 @@ PARTICLES = {
     "Z Boson": {"mass": 91.1876, "charge": 0, "spin": 1, "lifetime": 3e-25, "type": "boson"},
     "Higgs Boson": {"mass": 125.1, "charge": 0, "spin": 0, "lifetime": 1.56e-22, "type": "boson"},
 
-    # Composite particles (examples)
+    # Composite
     "Deuterium": {"mass": 2.014, "charge": 0, "spin": 1, "lifetime": 1e30, "type": "composite"},
+    "Tritium": {"mass": 3.016, "charge": 0, "spin": 1, "lifetime": 3.88e8, "type": "composite"},
+    "Helium-3": {"mass": 3.016, "charge": +2, "spin": 0.5, "lifetime": 1e30, "type": "composite"},
+    "Helium-4": {"mass": 4.002, "charge": +2, "spin": 0, "lifetime": 1e30, "type": "composite"},
+
 
     # Pions
     "Pi+": {"mass": 0.13957, "charge": +1, "spin": 0, "lifetime": 2.6e-8, "type": "boson"},
