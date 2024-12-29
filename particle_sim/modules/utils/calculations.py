@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import time
 from modules.constants import *
 from modules.dictionaries.particles import PARTICLES
 from modules.dictionaries.decay_channels import DECAY_CHANNELS
@@ -93,7 +94,7 @@ def decide_particle_action():
     
     # Get the particle's properties
     particle = PARTICLES[particle_type]
-    creation_probability = particle["probability"]
+    creation_probability = particle["vacuum_prob"]
     lifetime = particle["lifetime"]
     
 
@@ -114,8 +115,8 @@ def simulate_vacuum_energy(adjusted_timestep):
     global total_energy, entropy, temperature, time_steps, total_particles_created, total_particles_decayed_interaction, total_particles_decayed_natural, VOLUME, particle_counts, total_particle_count, total_particle_counts
 
     # Particle creation/annihilation
-    particle_type = random.choice(list(PARTICLES.keys()))
-    action = random.choice(["create", "annihilate"])
+    particle_type, action = decide_particle_action() #= random.choice(list(PARTICLES.keys()))
+    #action = random.choice(["create", "annihilate"])
     if action == "create":
         particle_counts[particle_type] += 1
         total_particles_created += 1
